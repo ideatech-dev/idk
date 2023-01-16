@@ -7,7 +7,7 @@ import (
 )
 
 type ISheet interface {
-	SourceGorm(ctx context.Context, db *gorm.DB) error
+	SourceGorm(ctx context.Context, dbName, tableName string, query *gorm.DB) error
 }
 
 var _ ISheet = &Sheet{}
@@ -24,17 +24,14 @@ type Sheet struct {
 	data    []map[string]interface{}
 }
 
-func (s *Sheet) SourceGorm(ctx context.Context, db *gorm.DB) error {
-	tableName := db.Statement.Table
-	dbName := db.Statement.Schema.Name
-
-	columns, err := s.fetchColumnsMysql(ctx, db, tableName, dbName)
+func (s *Sheet) SourceGorm(ctx context.Context, dbName, tableName string, query *gorm.DB) error {
+	columns, err := s.fetchColumnsMysql(ctx, query, tableName, dbName)
 	if err != nil {
 		return errors.Wrapf(err, "error fetch mysql columns")
 	}
 	s.columns = columns
 
-	data, err := s.fetchData(ctx, db)
+	data, err := s.fetchData(ctx, query)
 	if err != nil {
 		return errors.Wrapf(err, "error fetch mysql data")
 	}

@@ -24,8 +24,12 @@ func main() {
 	sheet2 := recap.NewSheet("sheet_2")
 
 	// insert source
+	dbName := "ideatech_staging"
+	tableName := "user"
 	query := &gorm.DB{}
-	if err := sheet1.SourceGorm(ctx, query); err != nil {
+	
+	err := sheet1.SourceGorm(ctx, dbName, tableName, query)
+	if err != nil {
 		log.Fatal(err)
 	}
 
