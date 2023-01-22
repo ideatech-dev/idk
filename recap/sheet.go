@@ -31,7 +31,7 @@ func (s *Sheet) SourceGorm(ctx context.Context, dbName, tableName string, query 
 	}
 	s.columns = columns
 
-	data, err := s.fetchData(ctx, query)
+	data, err := s.fetchData(ctx, tableName, query)
 	if err != nil {
 		return errors.Wrapf(err, "error fetch mysql data")
 	}
@@ -55,7 +55,7 @@ func (s *Sheet) fetchColumnsMysql(ctx context.Context, db *gorm.DB, tableName, d
 	return
 }
 
-func (s *Sheet) fetchData(ctx context.Context, db *gorm.DB) (data []map[string]interface{}, err error) {
-	err = db.WithContext(ctx).Find(&data).Error
+func (s *Sheet) fetchData(ctx context.Context, tableName string, db *gorm.DB) (data []map[string]interface{}, err error) {
+	err = db.WithContext(ctx).Table(tableName).Find(&data).Error
 	return
 }
