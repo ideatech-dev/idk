@@ -7,7 +7,8 @@ import (
 )
 
 type ISheet interface {
-	SourceGorm(ctx context.Context, dbName, tableName string, query *gorm.DB) error
+	SourceGormPostgres(ctx context.Context, tableSchema, tableName string, query *gorm.DB) error
+	SourceGormMysql(ctx context.Context, dbName, tableName string, query *gorm.DB) error
 }
 
 var _ ISheet = &Sheet{}
@@ -24,8 +25,16 @@ type Sheet struct {
 	data    []map[string]interface{}
 }
 
-func (s *Sheet) SourceGorm(ctx context.Context, dbName, tableName string, query *gorm.DB) error {
-	columns, err := s.fetchColumnsMysql(ctx, query, tableName, dbName)
+func (s *Sheet) SourceGormPostgres(ctx context.Context, tableSchema, tableName string, query *gorm.DB) error {
+	return s.sourceGorm(ctx, tableSchema, tableName, query)
+}
+
+func (s *Sheet) SourceGormMysql(ctx context.Context, dbName, tableName string, query *gorm.DB) error {
+	return s.sourceGorm(ctx, dbName, tableName, query)
+}
+
+func (s *Sheet) sourceGorm(ctx context.Context, tableSchema, tableName string, query *gorm.DB) error {
+	columns, err := s.fetchColumnsMysql(ctx, query, tableName, tableSchema)
 	if err != nil {
 		return errors.Wrapf(err, "error fetch mysql columns")
 	}
@@ -40,15 +49,16 @@ func (s *Sheet) SourceGorm(ctx context.Context, dbName, tableName string, query 
 	return nil
 }
 
-func (s *Sheet) fetchColumnsMysql(ctx context.Context, db *gorm.DB, tableName, dbName string) (cols []string, err error) {
-	query := db.WithContext(ctx).
-		Select("COLUMN_NAME").
-		Table("information_schema.columns").
-		Where("table_name = ?", tableName).
-		Where("table_schema = ?", dbName).
-		Order("ORDINAL_POSITION")
+func (s *Sheet) fetchColumnsMysql(ctx context.Context, db *gorm.DB, tableName, tableSchema string) (cols []string, err error) {
+	query := db.WithContext(ctx).Raw(`
+		SELECT COLUMN_NAME
+		FROM information_schema.columns
+		WHERE table_name = ?
+		AND table_schema = ?
+		ORDER BY ORDINAL_POSITION
+	`, tableName, tableSchema)
 
-	if err = query.Find(&cols).Error; err != nil {
+	if err = query.Scan(&cols).Error; err != nil {
 		return
 	}
 

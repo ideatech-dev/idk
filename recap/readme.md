@@ -2,6 +2,8 @@
 
 ## Quick Start
 
+### Postgres
+
 ```go
 package main
 
@@ -24,11 +26,11 @@ func main() {
 	sheet2 := recap.NewSheet("sheet_2")
 
 	// insert source
-	dbName := "ideatech_staging"
+	tableSchema := "public"
 	tableName := "user"
 	query := &gorm.DB{}
 	
-	err := sheet1.SourceGorm(ctx, dbName, tableName, query)
+	err := sheet1.SourceGormPostgres(ctx, tableSchema, tableName, query)
 	if err != nil {
 		log.Fatal(err)
 	}
